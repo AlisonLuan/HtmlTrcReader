@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TRC File Viewer</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        table, th, td {
+            border: 1px solid #ccc;
+        }
+        th, td {
+            padding: 10px;
+            text-align: left;
+        }
+        th {
+            background-color: #f4f4f4;
+        }
+    </style>
+</head>
+<body>
+    <h1>TRC File Viewer</h1>
+
+    <input type="file" id="fileInput" accept=".trc">
+    <button id="loadButton">Load .TRC File</button>
+
+    <table id="dataTable">
+        <thead>
+            <tr>
+                <th>Timestamp</th>
+                <th>ID</th>
+                <th>Extended</th>
+                <th>Data (8-byte array)</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Data rows will be inserted here dynamically -->
+        </tbody>
+    </table>
+
+    <script src="script.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const loadButton = document.getElementById('loadButton');
+            const fileInput = document.getElementById('fileInput');
+            const tableBody = document.querySelector('#dataTable tbody');
+
+            if (!loadButton || !fileInput || !tableBody) {
+                console.error('One or more elements are missing in the DOM.');
+                return;
+            }
+
+            loadButton.addEventListener('click', () => {
+                if (!fileInput.files.length) {
+                    alert('Please select a .trc file first!');
+                    return;
+                }
+
+                const file = fileInput.files[0];
+
+                try {
+                    // Call parseTRC function directly
+                    parseTRC(file).then((parsedMessages) => {
+                        tableBody.innerHTML = ''; // Clear previous data
+
+                        parsedMessages.forEach((message) => {
+                            const tr = document.createElement('tr');
+
+                            const timestampTd = document.createElement('td');
+                            timestampTd.textContent = message.timestamp || 'N/A';
+                            tr.appendChild(timestampTd);
+
+                            const idTd = document.createElement('td');
+                            idTd.textContent = message.arbitrationId
+                                ? `0x${message.arbitrationId.toString(16).toUpperCase()}`
+                                : 'N/A';
+                            tr.appendChild(idTd);
+
+                            const extendedTd = document.createElement('td');
+                            extendedTd.textContent = message.isExtendedId !== undefined
+                                ? (message.isExtendedId ? 'Yes' : 'No')
+                                : 'N/A';
+                            tr.appendChild(extendedTd);
+
+                            const dataTd = document.createElement('td');
+                            dataTd.textContent = message.data
+                                ? message.data.map(byte => byte.toString(16).padStart(2, '0')).join(' ')
+                                : 'N/A';
+                            tr.appendChild(dataTd);
+
+                            tableBody.appendChild(tr);
+                        });
+                    });
+                } catch (error) {
+                    console.error('Error processing the file:', error);
+                    alert('An error occurred while processing the file. Please check the console for details.');
+                }
+            });
+        });
+    </script>
+</body>
+</html>
